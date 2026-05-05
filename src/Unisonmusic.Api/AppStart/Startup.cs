@@ -15,6 +15,7 @@ namespace Unisonmusic.Api.AppStart
 
         public void Initialize()
         {
+            _builder.Services.AddSwaggerGen();
             _builder.Services.ConfigureCors();
 
             InitConfigs();

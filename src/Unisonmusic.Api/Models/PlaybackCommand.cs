@@ -6,3 +6,8 @@ public sealed record PlaybackCommand(
     DateTimeOffset StartAt,
     DateTimeOffset ServerSentAtUtc,
     int StartDelayMs);
+
+public sealed record PauseCommand(
+    string RoomCode,
+    DateTimeOffset PausedAt,
+    DateTimeOffset ServerSentAtUtc);
