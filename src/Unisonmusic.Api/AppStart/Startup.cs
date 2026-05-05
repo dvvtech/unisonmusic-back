@@ -1,10 +1,12 @@
-﻿using Unisonmusic.Api.AppStart.Extensions;
+using System.Text.Json;
+using Unisonmusic.Api.AppStart.Extensions;
+using Unisonmusic.Api.Services;
 
 namespace Unisonmusic.Api.AppStart
 {
     public class Startup
     {
-        private WebApplicationBuilder _builder;
+        private readonly WebApplicationBuilder _builder;
 
         public Startup(WebApplicationBuilder builder)
         {
@@ -13,29 +15,28 @@ namespace Unisonmusic.Api.AppStart
 
         public void Initialize()
         {
-            if (_builder.Environment.IsDevelopment())
-            {
-                _builder.Services.AddSwaggerGen();
-            }
-            else
-            {
-                _builder.Services.ConfigureCors();
-            }
+            _builder.Services.ConfigureCors();
 
             InitConfigs();
             ConfigureServices();
 
             _builder.Services.AddControllers();
+            _builder.Services
+                .AddSignalR()
+                .AddJsonProtocol(options =>
+                {
+                    // SignalR client code expects camelCase JSON fields.
+                    options.PayloadSerializerOptions.PropertyNamingPolicy = JsonNamingPolicy.CamelCase;
+                });
         }
 
         private void InitConfigs()
         {
-            
         }
 
         private void ConfigureServices()
         {
-            
+            _builder.Services.AddSingleton<IRoomService, RoomService>();
         }
     }
 }

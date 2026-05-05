@@ -1,44 +1,28 @@
-﻿namespace Unisonmusic.Api.AppStart.Extensions
+namespace Unisonmusic.Api.AppStart.Extensions
 {
     public static class CorsExtensions
     {
-        private const string AllowAllPolicy = "AllowAll";
-        private const string AllowSpecificOriginPolicy = "AllowSpecificOrigin";
+        public const string FrontendPolicy = "FrontendCors";
 
         public static void ConfigureCors(this IServiceCollection services)
         {
             services.AddCors(options =>
             {
-                options.AddPolicy(AllowSpecificOriginPolicy,
-                    policy =>
-                    {
-                        policy.AllowAnyOrigin()//WithOrigins("https://unisonmusic.ru")
-                                               //.AllowCredentials() // Разрешить куки
-                              .AllowAnyHeader()
-                              .AllowAnyMethod();
-                    });
-
-                options.AddPolicy(AllowAllPolicy, policy =>
+                options.AddPolicy(FrontendPolicy, policy =>
                 {
-                    policy.AllowAnyOrigin()  // Разрешить любой источник
-                                             //.AllowCredentials() // Разрешить куки
-                          .AllowAnyMethod()  // Разрешить любые HTTP-методы (GET, POST, PUT и т. д.)
-                          .AllowAnyHeader(); // Разрешить любые заголовки
+                    policy
+                        // Allows local HTML files, localhost ports and a future frontend domain.
+                        .SetIsOriginAllowed(_ => true)
+                        .AllowAnyHeader()
+                        .AllowAnyMethod()
+                        .AllowCredentials();
                 });
             });
         }
 
         public static void ApplyCors(this WebApplication app)
         {
-            if (app.Environment.IsDevelopment())
-            {
-                app.UseCors(AllowAllPolicy);
-            }
-            else
-            {
-                //app.UseCors(AllowAllPolicy);
-                app.UseCors(AllowSpecificOriginPolicy);
-            }
+            app.UseCors(FrontendPolicy);
         }
     }
 }

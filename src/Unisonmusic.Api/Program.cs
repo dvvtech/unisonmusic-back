@@ -1,5 +1,6 @@
 using Unisonmusic.Api.AppStart;
 using Unisonmusic.Api.AppStart.Extensions;
+using Unisonmusic.Api.Hubs;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -8,18 +9,18 @@ startup.Initialize();
 
 var app = builder.Build();
 
-if (builder.Environment.IsDevelopment())
-{
-    app.UseSwagger();
-    app.UseSwaggerUI();
-}
-else
-{
-    app.ApplyCors();
-}
-
+app.ApplyCors();
 app.UseHttpsRedirection();
 app.UseAuthorization();
+
 app.MapControllers();
+app.MapHub<MusicHub>("/hubs/music");
+
+app.MapGet("/", () => Results.Ok(new
+{
+    service = "Unisonmusic API",
+    hub = "/hubs/music",
+    utcNow = DateTimeOffset.UtcNow
+}));
 
 app.Run();
