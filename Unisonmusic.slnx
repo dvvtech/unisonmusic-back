@@ -1,0 +1,6 @@
+<Solution>
+  <Folder Name="/deploy/" />
+  <Folder Name="/src/">
+    <Project Path="src/Unisonmusic.Api/Unisonmusic.Api.csproj" />
+  </Folder>
+</Solution>
