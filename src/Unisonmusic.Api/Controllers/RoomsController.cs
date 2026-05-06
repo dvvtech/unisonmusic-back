@@ -5,7 +5,7 @@ using Unisonmusic.Api.Services;
 namespace Unisonmusic.Api.Controllers;
 
 [ApiController]
-[Route("api/[controller]")]
+[Route("rooms")]
 public sealed class RoomsController : ControllerBase
 {
     private readonly IRoomService _roomService;
@@ -32,5 +32,11 @@ public sealed class RoomsController : ControllerBase
         {
             return NotFound(new { message = exception.Message });
         }
+    }
+
+    [HttpGet("test")]
+    public ActionResult<string> Test()
+    {
+        return Ok("579");
     }
 }
