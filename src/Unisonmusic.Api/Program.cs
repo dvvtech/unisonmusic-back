@@ -4,7 +4,7 @@ using Unisonmusic.Api.Hubs;
 
 var builder = WebApplication.CreateBuilder(args);
 
-builder.WebHost.UseUrls("http://*:5113", "http://localhost:5113");
+//builder.WebHost.UseUrls("http://*:5113", "http://localhost:5113");
 
 var startup = new Startup(builder);
 startup.Initialize();
