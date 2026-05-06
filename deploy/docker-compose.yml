@@ -12,7 +12,7 @@ services:
         condition: on-failure
       labels:      
         - "traefik.enable=true"      
-        - "traefik.http.routers.unisonmusic-api.rule=Host(`api.cloud-platform.pro`) && PathPrefix(`/unisonmusiс`)"
+        - "traefik.http.routers.unisonmusic-api.rule=Host(`api.cloud-platform.pro`) && PathPrefix(`/unisonmusic`)"
         - "traefik.http.routers.unisonmusic-api.entrypoints=websecure"      
         - "traefik.http.routers.unisonmusic-api.tls.certresolver=letsencrypt"     
         - "traefik.http.services.unisonmusic-api.loadbalancer.server.port=8080"
