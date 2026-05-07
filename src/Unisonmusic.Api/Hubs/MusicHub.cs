@@ -110,19 +110,21 @@ public sealed class MusicHub : Hub
         }
     }
 
-    public async Task<PauseCommand> PausePlayback()
+    public async Task<PauseCommand> PausePlayback(double positionSeconds)
     {
         try
         {
             var room = _roomService.GetRoomForConnection(Context.ConnectionId);
             var now = DateTimeOffset.UtcNow;
-            var command = new PauseCommand(room.Code, now, now);
+            var normalizedPositionSeconds = Math.Max(0, positionSeconds);
+            var command = new PauseCommand(room.Code, normalizedPositionSeconds, now, now);
 
             await Clients.Group(room.Code).SendAsync("ReceivePause", command);
 
             _logger.LogInformation(
-                "Sent playback pause for room {RoomCode}: {PausedAtUtc}",
+                "Sent playback pause for room {RoomCode} at {PositionSeconds}s: {PausedAtUtc}",
                 room.Code,
+                command.PositionSeconds,
                 command.PausedAt);
 
             return command;

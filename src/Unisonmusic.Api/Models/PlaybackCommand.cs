@@ -9,5 +9,6 @@ public sealed record PlaybackCommand(
 
 public sealed record PauseCommand(
     string RoomCode,
+    double PositionSeconds,
     DateTimeOffset PausedAt,
     DateTimeOffset ServerSentAtUtc);
