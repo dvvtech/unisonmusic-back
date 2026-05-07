@@ -18,10 +18,10 @@ public sealed class RoomService : IRoomService
         _logger = logger;
     }
 
-    public Room CreateRoom(string connectionId)
+    public Room CreateRoom(string connectionId, string? userAgent)
     {
         var room = new Room { Code = GenerateRoomCode() };
-        AddUser(room, connectionId);
+        AddUser(room, connectionId, userAgent);
         _rooms[room.Code] = room;
         _connectionRooms[connectionId] = room.Code;
 
@@ -29,7 +29,7 @@ public sealed class RoomService : IRoomService
         return room;
     }
 
-    public Room JoinRoom(string roomCode, string connectionId)
+    public Room JoinRoom(string roomCode, string connectionId, string? userAgent)
     {
         var normalizedCode = NormalizeRoomCode(roomCode);
 
@@ -40,7 +40,7 @@ public sealed class RoomService : IRoomService
 
         lock (room.SyncRoot)
         {
-            AddUser(room, connectionId);
+            AddUser(room, connectionId, userAgent);
             _connectionRooms[connectionId] = normalizedCode;
         }
 
@@ -220,16 +220,121 @@ public sealed class RoomService : IRoomService
         throw new InvalidOperationException("Не удалось сгенерировать код комнаты.");
     }
 
-    private static void AddUser(Room room, string connectionId)
+    private static void AddUser(Room room, string connectionId, string? userAgent)
     {
         var suffixLength = Math.Min(4, connectionId.Length);
-        var displayName = $"Слушатель {connectionId[^suffixLength..].ToUpperInvariant()}";
+        var baseName = $"Слушатель {connectionId[^suffixLength..].ToUpperInvariant()}";
+        var deviceName = GetDeviceName(userAgent);
+        var displayName = string.IsNullOrWhiteSpace(deviceName)
+            ? baseName
+            : $"{baseName} - {deviceName}";
 
         room.Users[connectionId] = new User
         {
             ConnectionId = connectionId,
             Name = displayName
         };
+    }
+
+    private static string? GetDeviceName(string? userAgent)
+    {
+        if (string.IsNullOrWhiteSpace(userAgent))
+        {
+            return null;
+        }
+
+        var browser = GetBrowserName(userAgent);
+        var platform = GetPlatformName(userAgent);
+
+        if (browser is null && platform is null)
+        {
+            return null;
+        }
+
+        return browser is null
+            ? platform
+            : platform is null
+                ? browser
+                : $"{browser} / {platform}";
+    }
+
+    private static string? GetBrowserName(string userAgent)
+    {
+        if (userAgent.Contains("YaBrowser", StringComparison.OrdinalIgnoreCase))
+        {
+            return "Yandex Browser";
+        }
+
+        if (userAgent.Contains("Edg/", StringComparison.OrdinalIgnoreCase))
+        {
+            return "Edge";
+        }
+
+        if (userAgent.Contains("SamsungBrowser", StringComparison.OrdinalIgnoreCase))
+        {
+            return "Samsung Internet";
+        }
+
+        if (userAgent.Contains("OPR/", StringComparison.OrdinalIgnoreCase) ||
+            userAgent.Contains("Opera", StringComparison.OrdinalIgnoreCase))
+        {
+            return "Opera";
+        }
+
+        if (userAgent.Contains("CriOS", StringComparison.OrdinalIgnoreCase) ||
+            userAgent.Contains("Chrome", StringComparison.OrdinalIgnoreCase))
+        {
+            return "Chrome";
+        }
+
+        if (userAgent.Contains("FxiOS", StringComparison.OrdinalIgnoreCase) ||
+            userAgent.Contains("Firefox", StringComparison.OrdinalIgnoreCase))
+        {
+            return "Firefox";
+        }
+
+        if (userAgent.Contains("Safari", StringComparison.OrdinalIgnoreCase))
+        {
+            return "Safari";
+        }
+
+        return null;
+    }
+
+    private static string? GetPlatformName(string userAgent)
+    {
+        if (userAgent.Contains("iPhone", StringComparison.OrdinalIgnoreCase))
+        {
+            return "iPhone";
+        }
+
+        if (userAgent.Contains("iPad", StringComparison.OrdinalIgnoreCase))
+        {
+            return "iPad";
+        }
+
+        if (userAgent.Contains("Android", StringComparison.OrdinalIgnoreCase))
+        {
+            return "Android";
+        }
+
+        if (userAgent.Contains("Windows", StringComparison.OrdinalIgnoreCase))
+        {
+            return "Windows";
+        }
+
+        if (userAgent.Contains("Macintosh", StringComparison.OrdinalIgnoreCase) ||
+            userAgent.Contains("Mac OS X", StringComparison.OrdinalIgnoreCase))
+        {
+            return "macOS";
+        }
+
+        if (userAgent.Contains("Linux", StringComparison.OrdinalIgnoreCase))
+        {
+            return "Linux";
+        }
+
+        return null;
     }
 
     private static string NormalizeRoomCode(string roomCode)

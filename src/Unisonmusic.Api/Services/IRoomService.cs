@@ -5,8 +5,8 @@ namespace Unisonmusic.Api.Services;
 
 public interface IRoomService
 {
-    Room CreateRoom(string connectionId);
-    Room JoinRoom(string roomCode, string connectionId);
+    Room CreateRoom(string connectionId, string? userAgent);
+    Room JoinRoom(string roomCode, string connectionId, string? userAgent);
     bool TryLeave(string connectionId, out Room? previousRoom);
     Room GetRoomForConnection(string connectionId);
     Room SetTrack(string connectionId, string url);

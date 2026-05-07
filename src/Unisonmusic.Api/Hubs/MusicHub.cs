@@ -22,7 +22,7 @@ public sealed class MusicHub : Hub
         {
             await LeaveCurrentRoomAsync();
 
-            var room = _roomService.CreateRoom(Context.ConnectionId);
+            var room = _roomService.CreateRoom(Context.ConnectionId, GetUserAgent());
             await Groups.AddToGroupAsync(Context.ConnectionId, room.Code);
 
             var snapshot = _roomService.ToSnapshot(room);
@@ -42,7 +42,7 @@ public sealed class MusicHub : Hub
         {
             await LeaveCurrentRoomAsync();
 
-            var room = _roomService.JoinRoom(roomCode, Context.ConnectionId);
+            var room = _roomService.JoinRoom(roomCode, Context.ConnectionId, GetUserAgent());
             await Groups.AddToGroupAsync(Context.ConnectionId, room.Code);
 
             var snapshot = _roomService.ToSnapshot(room);
@@ -194,5 +194,10 @@ public sealed class MusicHub : Hub
             await Clients.Group(previousRoom.Code).SendAsync("RoomUpdated", snapshot);
             await Clients.Group(previousRoom.Code).SendAsync("UserReadyUpdate", snapshot);
         }
+    }
+
+    private string? GetUserAgent()
+    {
+        return Context.GetHttpContext()?.Request.Headers["User-Agent"].ToString();
     }
 }
