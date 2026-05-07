@@ -86,7 +86,7 @@ public sealed class MusicHub : Hub
 
             if (allReady)
             {
-                await SendPlaybackCommandAsync(room);
+                await SendPlaybackCommandAsync(room, 0);
             }
 
             return snapshot;
@@ -102,7 +102,20 @@ public sealed class MusicHub : Hub
         try
         {
             var room = _roomService.GetRoomForConnection(Context.ConnectionId);
-            return await SendPlaybackCommandAsync(room);
+            return await SendPlaybackCommandAsync(room, 0);
+        }
+        catch (InvalidOperationException exception)
+        {
+            throw new HubException(exception.Message);
+        }
+    }
+
+    public async Task<PlaybackCommand> ContinuePlayback(double positionSeconds)
+    {
+        try
+        {
+            var room = _roomService.GetRoomForConnection(Context.ConnectionId);
+            return await SendPlaybackCommandAsync(room, positionSeconds);
         }
         catch (InvalidOperationException exception)
         {
@@ -118,6 +131,12 @@ public sealed class MusicHub : Hub
             var now = DateTimeOffset.UtcNow;
             var normalizedPositionSeconds = Math.Max(0, positionSeconds);
             var command = new PauseCommand(room.Code, normalizedPositionSeconds, now, now);
+
+            lock (room.SyncRoot)
+            {
+                room.IsPlaybackScheduled = false;
+                room.ScheduledStartAtUtc = null;
+            }
 
             await Clients.Group(room.Code).SendAsync("ReceivePause", command);
 
@@ -146,14 +165,15 @@ public sealed class MusicHub : Hub
         await base.OnDisconnectedAsync(exception);
     }
 
-    private async Task<PlaybackCommand> SendPlaybackCommandAsync(Room room)
+    private async Task<PlaybackCommand> SendPlaybackCommandAsync(Room room, double positionSeconds)
     {
-        var command = _roomService.SchedulePlayback(room);
+        var command = _roomService.SchedulePlayback(room, positionSeconds);
         await Clients.Group(room.Code).SendAsync("ReceiveStartTime", command);
 
         _logger.LogInformation(
-            "Sent playback start for room {RoomCode}: {StartAtUtc}",
+            "Sent playback start for room {RoomCode} at {PositionSeconds}s: {StartAtUtc}",
             room.Code,
+            command.PositionSeconds,
             command.StartAt);
 
         return command;

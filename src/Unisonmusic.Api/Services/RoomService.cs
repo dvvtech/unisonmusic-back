@@ -133,7 +133,7 @@ public sealed class RoomService : IRoomService
         }
     }
 
-    public PlaybackCommand SchedulePlayback(Room room)
+    public PlaybackCommand SchedulePlayback(Room room, double positionSeconds)
     {
         lock (room.SyncRoot)
         {
@@ -143,12 +143,13 @@ public sealed class RoomService : IRoomService
             }
 
             var now = DateTimeOffset.UtcNow;
+            var normalizedPositionSeconds = Math.Max(0, positionSeconds);
 
             if (room.IsPlaybackScheduled &&
                 room.ScheduledStartAtUtc is { } existingStartAt &&
                 existingStartAt > now)
             {
-                return new PlaybackCommand(room.Code, room.TrackUrl!, existingStartAt, now, (int)StartDelay.TotalMilliseconds);
+                return new PlaybackCommand(room.Code, room.TrackUrl!, normalizedPositionSeconds, existingStartAt, now, (int)StartDelay.TotalMilliseconds);
             }
 
             var startAt = now.Add(StartDelay);
@@ -157,7 +158,7 @@ public sealed class RoomService : IRoomService
 
             _logger.LogInformation("Playback scheduled in room {RoomCode} at {StartAtUtc}", room.Code, startAt);
 
-            return new PlaybackCommand(room.Code, room.TrackUrl!, startAt, now, (int)StartDelay.TotalMilliseconds);
+            return new PlaybackCommand(room.Code, room.TrackUrl!, normalizedPositionSeconds, startAt, now, (int)StartDelay.TotalMilliseconds);
         }
     }
 
