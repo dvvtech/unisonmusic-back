@@ -16,13 +16,13 @@ public sealed class MusicHub : Hub
         _logger = logger;
     }
 
-    public async Task<RoomSnapshotDto> CreateRoom()
+    public async Task<RoomSnapshotDto> CreateRoom(ClientDeviceInfo? deviceInfo = null)
     {
         try
         {
             await LeaveCurrentRoomAsync();
 
-            var room = _roomService.CreateRoom(Context.ConnectionId, GetUserAgent());
+            var room = _roomService.CreateRoom(Context.ConnectionId, deviceInfo, GetUserAgent());
             await Groups.AddToGroupAsync(Context.ConnectionId, room.Code);
 
             var snapshot = _roomService.ToSnapshot(room);
@@ -36,13 +36,13 @@ public sealed class MusicHub : Hub
         }
     }
 
-    public async Task<RoomSnapshotDto> JoinRoom(string roomCode)
+    public async Task<RoomSnapshotDto> JoinRoom(string roomCode, ClientDeviceInfo? deviceInfo = null)
     {
         try
         {
             await LeaveCurrentRoomAsync();
 
-            var room = _roomService.JoinRoom(roomCode, Context.ConnectionId, GetUserAgent());
+            var room = _roomService.JoinRoom(roomCode, Context.ConnectionId, deviceInfo, GetUserAgent());
             await Groups.AddToGroupAsync(Context.ConnectionId, room.Code);
 
             var snapshot = _roomService.ToSnapshot(room);
