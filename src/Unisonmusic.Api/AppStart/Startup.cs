@@ -1,5 +1,6 @@
 using System.Text.Json;
 using Unisonmusic.Api.AppStart.Extensions;
+using Unisonmusic.Api.Configuration;
 using Unisonmusic.Api.Services;
 
 namespace Unisonmusic.Api.AppStart
@@ -33,11 +34,18 @@ namespace Unisonmusic.Api.AppStart
 
         private void InitConfigs()
         {
+            if (!_builder.Environment.IsDevelopment())
+            {
+                _builder.Configuration.AddKeyPerFile("/run/secrets", optional: true);
+            }
+
+            var configSection = _builder.Configuration.GetSection(GoogleRecaptchaConfig.SectionName);
         }
 
         private void ConfigureServices()
         {
             _builder.Services.AddSingleton<IRoomService, RoomService>();
+            _builder.Services.AddScoped<IOfftubeClient, OfftubeClient>();            
         }
     }
 }

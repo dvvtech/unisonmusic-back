@@ -4,7 +4,9 @@ services:
     environment:
       - ASPNETCORE_ENVIRONMENT=Prod      
     networks:
-      - public-network5    
+      - public-network5
+    secrets:
+      - GoogleRecaptcha__SecretKeyForOfftube
     deploy:
       mode: replicated
       replicas: 1
@@ -21,4 +23,8 @@ services:
 
 networks:
   public-network5:
+    external: true
+
+secrets:
+  GoogleRecaptcha__SecretKeyForOfftube:
     external: true
