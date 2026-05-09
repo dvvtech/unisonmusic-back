@@ -1,7 +1,7 @@
 using Microsoft.AspNetCore.SignalR;
 using Unisonmusic.Api.Models;
 using Unisonmusic.Api.Models.Dtos;
-using Unisonmusic.Api.Services;
+using Unisonmusic.Api.Services.Abstract;
 
 namespace Unisonmusic.Api.Hubs;
 

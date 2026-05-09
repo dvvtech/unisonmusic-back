@@ -1,7 +1,7 @@
 using Unisonmusic.Api.Models;
 using Unisonmusic.Api.Models.Dtos;
 
-namespace Unisonmusic.Api.Services;
+namespace Unisonmusic.Api.Services.Abstract;
 
 public interface IRoomService
 {

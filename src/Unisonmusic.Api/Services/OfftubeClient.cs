@@ -1,40 +1,50 @@
-﻿namespace Unisonmusic.Api.Services
+﻿using System.Text;
+using System.Text.Json;
+using Unisonmusic.Api.Models;
+using Unisonmusic.Api.Services.Abstract;
+
+namespace Unisonmusic.Api.Services
 {
     public class OfftubeClient : IOfftubeClient
     {
-        private const string url = "http://offtube_api:8080/music/upload-from-url";
-
-        private readonly IHttpClientFactory _httpClientFactory;
+        private readonly HttpClient _httpClient;        
         private readonly ILogger<OfftubeClient> _logger;
 
         public OfftubeClient(
-            IHttpClientFactory httpClientFactory,
+            HttpClient httpClient,            
             ILogger<OfftubeClient> logger)
         {
-            _httpClientFactory = httpClientFactory;
+            _httpClient = httpClient;     
             _logger = logger;
         }
 
-        public async Task GetFileKeyAsync(CancellationToken cancellationToken = default)
+        public async Task<string> GetFileKeyAsync(string url, CancellationToken cancellationToken = default)
         {
             try
             {
-                var httpClient = _httpClientFactory.CreateClient();
-
-                using var request = new HttpRequestMessage(HttpMethod.Get, url);                
-
-                using var response = await httpClient.SendAsync(request, cancellationToken);
-                if (!response.IsSuccessStatusCode)
+                var request = new
                 {
-                    _logger.LogWarning(
-                        "Analytics tracking failed with status code {StatusCode}",
-                        response.StatusCode);
-                }
+                    Url = url
+                };
+
+                var response = await _httpClient.PostAsJsonAsync(
+                    "music/upload-from-url",
+                    request,
+                    cancellationToken);
+
+                response.EnsureSuccessStatusCode();
+
+                var result = await response.Content
+                    .ReadFromJsonAsync<UploadResponse>(cancellationToken);
+
+                return result.Key;
             }
             catch (Exception ex)
             {
-                _logger.LogError(ex, "Failed to track visit");
+                _logger.LogError(ex, "Failed to upload file from url: {Url}", url);
             }
+
+            return string.Empty;
         }
     }
 }

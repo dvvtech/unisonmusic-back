@@ -2,6 +2,7 @@ using System.Text.Json;
 using Unisonmusic.Api.AppStart.Extensions;
 using Unisonmusic.Api.Configuration;
 using Unisonmusic.Api.Services;
+using Unisonmusic.Api.Services.Abstract;
 
 namespace Unisonmusic.Api.AppStart
 {
@@ -45,7 +46,16 @@ namespace Unisonmusic.Api.AppStart
         private void ConfigureServices()
         {
             _builder.Services.AddSingleton<IRoomService, RoomService>();
-            _builder.Services.AddScoped<IOfftubeClient, OfftubeClient>();            
+            _builder.Services.AddScoped<IOfftubeClient, OfftubeClient>();
+
+            _builder.Services.AddHttpClient<IOfftubeClient, OfftubeClient>((serviceProvider, client) =>
+            {
+                var config = _builder.Configuration.GetSection(GoogleRecaptchaConfig.SectionName).Get<GoogleRecaptchaConfig>();
+
+                client.BaseAddress = new Uri("http://offtube_api:8080");
+                client.Timeout = TimeSpan.FromSeconds(45); // Таймаут запроса
+                //client.DefaultRequestHeaders.Add("Authorization", $"Bearer {config.SecretKeyForOfftube}");
+            });
         }
     }
 }

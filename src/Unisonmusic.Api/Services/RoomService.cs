@@ -2,6 +2,7 @@ using System.Collections.Concurrent;
 using System.Security.Cryptography;
 using Unisonmusic.Api.Models;
 using Unisonmusic.Api.Models.Dtos;
+using Unisonmusic.Api.Services.Abstract;
 
 namespace Unisonmusic.Api.Services;
 
