@@ -4,5 +4,6 @@
   </Folder>
   <Folder Name="/src/">
     <Project Path="src/Unisonmusic.Api/Unisonmusic.Api.csproj" />
+    <Project Path="src/Unisonmusic.Migration/Unisonmusic.Migration.csproj" />
   </Folder>
 </Solution>
