@@ -9,7 +9,7 @@ namespace Unisonmusic.Api.DAL
         public DbSet<TrackEntity> Tracks { get; set; }
 
         public UnisonmusicDbContext(DbContextOptions<UnisonmusicDbContext> options)
-            :base()
+            :base(options)
         {            
         }
 
