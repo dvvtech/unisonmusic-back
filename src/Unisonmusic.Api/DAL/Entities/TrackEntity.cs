@@ -1,6 +1,6 @@
 ﻿namespace Unisonmusic.Api.DAL.Entities
 {
-    public class TracksEntity
+    public class TrackEntity
     {
         public long Id { get; set; }
 

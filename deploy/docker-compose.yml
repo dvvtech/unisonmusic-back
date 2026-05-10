@@ -10,6 +10,7 @@ services:
       - S3CloudConfig__TenantId      
       - S3CloudConfig__AccessKey
       - S3CloudConfig__SecretKey
+      - unisonmusic_connection_string
     deploy:
       mode: replicated
       replicas: 1
@@ -36,4 +37,6 @@ secrets:
   S3CloudConfig__AccessKey:
     external: true
   S3CloudConfig__SecretKey:
+    external: true
+  unisonmusic_connection_string:
     external: true

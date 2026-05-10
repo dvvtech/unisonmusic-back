@@ -1,6 +1,7 @@
 using System.Text.Json;
 using Unisonmusic.Api.AppStart.Extensions;
 using Unisonmusic.Api.Configuration;
+using Unisonmusic.Api.DAL;
 using Unisonmusic.Api.Services;
 using Unisonmusic.Api.Services.Abstract;
 
@@ -28,6 +29,7 @@ namespace Unisonmusic.Api.AppStart
 
             InitConfigs();
             ConfigureServices();
+            //SetupDb();
 
             _builder.Services.AddControllers();            
         }
@@ -41,13 +43,19 @@ namespace Unisonmusic.Api.AppStart
 
             _builder.Services.Configure<GoogleRecaptchaConfig>(_builder.Configuration.GetSection(GoogleRecaptchaConfig.SectionName));
             _builder.Services.Configure<S3CloudConfig>(_builder.Configuration.GetSection(S3CloudConfig.SectionName));
+            _builder.Services.Configure<DatabaseOptions>(_builder.Configuration.GetSection(DatabaseOptions.SectionName));
+        }
+
+        private void SetupDb()
+        {
+            _builder.Services.AddDAL(_builder.Configuration);
         }
 
         private void ConfigureServices()
         {
             _builder.Services.AddSingleton<IRoomService, RoomService>();
             _builder.Services.AddScoped<IOfftubeClient, OfftubeClient>();
-            _builder.Services.AddScoped<IStorageService, S3StorageService>();
+            _builder.Services.AddScoped<IStorageService, S3StorageService>();            
 
             _builder.Services.AddHttpClient<IOfftubeClient, OfftubeClient>((serviceProvider, client) =>
             {
