@@ -1,7 +1,9 @@
-﻿namespace Unisonmusic.Api.Services.Abstract
+﻿using Unisonmusic.Api.Models;
+
+namespace Unisonmusic.Api.Services.Abstract
 {
     public interface IOfftubeClient
     {
-        Task<string> GetFileKeyAsync(string url, CancellationToken cancellationToken = default);
+        Task<UploadResponse> GetFileKeyAsync(string url, CancellationToken cancellationToken = default);
     }
 }

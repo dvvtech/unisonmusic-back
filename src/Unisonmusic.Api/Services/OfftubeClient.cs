@@ -18,7 +18,7 @@ namespace Unisonmusic.Api.Services
             _logger = logger;
         }
 
-        public async Task<string> GetFileKeyAsync(string url, CancellationToken cancellationToken = default)
+        public async Task<UploadResponse> GetFileKeyAsync(string url, CancellationToken cancellationToken = default)
         {
             try
             {
@@ -37,14 +37,14 @@ namespace Unisonmusic.Api.Services
                 var result = await response.Content
                     .ReadFromJsonAsync<UploadResponse>(cancellationToken);
 
-                return result.ObjectKey;
+                return result;
             }
             catch (Exception ex)
             {
                 _logger.LogError(ex, "Failed to upload file from url: {Url}", url);
             }
 
-            return string.Empty;
+            return null;
         }
     }
 }

@@ -48,15 +48,17 @@ namespace Unisonmusic.Api.Controllers
 
                 return Ok(new UrlS3Response
                 {
-                    Url = s3ObjectUrl
+                    Url = existingTrack.Url,
+                    S3Url = s3ObjectUrl,
+                    TrackTitle = existingTrack.Title
                 });
             }
             
-            var objectKey = await _offtubeClient.GetFileKeyAsync(
+            UploadResponse uploadResponse = await _offtubeClient.GetFileKeyAsync(
                 request.Url,
                 cancellationToken);
 
-            if (string.IsNullOrWhiteSpace(objectKey))
+            if (uploadResponse == null || string.IsNullOrWhiteSpace(uploadResponse.ObjectKey))
             {
                 return StatusCode(
                     StatusCodes.Status500InternalServerError,
@@ -68,7 +70,8 @@ namespace Unisonmusic.Api.Controllers
                 await _dbContext.Tracks.AddAsync(new DAL.Entities.TrackEntity
                 {
                     Url = request.Url,
-                    S3ObjectKey = objectKey,
+                    S3ObjectKey = uploadResponse.ObjectKey,
+                    Title = uploadResponse.TrackTitle
                 });
 
                 await _dbContext.SaveChangesAsync();
@@ -90,14 +93,16 @@ namespace Unisonmusic.Api.Controllers
                         "Failed to get saved track");
                 }
 
-                objectKey = savedTrack.S3ObjectKey;
+                uploadResponse.ObjectKey = savedTrack.S3ObjectKey;
             }
 
-            var s3Url = _storageService.GetPresignedUrl(objectKey);
+            var s3Url = _storageService.GetPresignedUrl(uploadResponse.ObjectKey);
 
             return Ok(new UrlS3Response
             {
-                Url = s3Url
+                Url = request.Url,
+                S3Url = s3Url,
+                TrackTitle = uploadResponse.TrackTitle
             });
         }
     }
