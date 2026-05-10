@@ -23,6 +23,10 @@ namespace Unisonmusic.Api.DAL.EFConfigurations
                 .IsRequired()
                 .HasMaxLength(512);
 
+            builder.Property(x => x.Title)
+                .IsRequired()
+                .HasMaxLength(256);
+
             builder.HasIndex(x => x.Url)
                 .IsUnique();
         }
