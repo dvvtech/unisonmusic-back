@@ -4,6 +4,6 @@
   </Folder>
   <Folder Name="/src/">
     <Project Path="src/Unisonmusic.Api/Unisonmusic.Api.csproj" />
-    <Project Path="src/Unisonmusic.Migration/Unisonmusic.Migration.csproj" />
+    <Project Path="src/Unisonmusic.Migrator/Unisonmusic.Migrator.csproj" Id="9a0dcfd4-8e61-4ea3-b3d6-aae9d790b698" />
   </Folder>
 </Solution>
