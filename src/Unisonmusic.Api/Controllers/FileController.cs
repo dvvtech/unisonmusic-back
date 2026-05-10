@@ -1,4 +1,6 @@
 ﻿using Microsoft.AspNetCore.Mvc;
+using Microsoft.EntityFrameworkCore;
+using Unisonmusic.Api.DAL;
 using Unisonmusic.Api.Models;
 using Unisonmusic.Api.Services.Abstract;
 
@@ -10,12 +12,16 @@ namespace Unisonmusic.Api.Controllers
     {
         private readonly IOfftubeClient _offtubeClient;
         private readonly IStorageService _storageService;
+        private readonly UnisonmusicDbContext _dbContext;
 
         public FileController(
-            IOfftubeClient offtubeClient, IStorageService storageService)
+            IOfftubeClient offtubeClient,
+            IStorageService storageService,
+            UnisonmusicDbContext dbContext)
         {
             _offtubeClient = offtubeClient;
             _storageService = storageService;
+            _dbContext = dbContext;
         }
 
         [HttpPost("upload-from-url")]
@@ -28,10 +34,24 @@ namespace Unisonmusic.Api.Controllers
                 return BadRequest("Url is required");
             }
 
-            //обращаемся к бд нет ли такой уже ссылки
-            //если есть то возвращаем ее key
-            //если нет то идем дальше
+            request.Url = request.Url.Trim();
 
+            var existingTrack = await _dbContext.Tracks
+                .AsNoTracking()
+                .FirstOrDefaultAsync(
+                    t => t.Url == request.Url,
+                    cancellationToken);
+
+            if (existingTrack != null)
+            {
+                var s3ObjectUrl = _storageService.GetPresignedUrl(existingTrack.S3ObjectKey);
+
+                return Ok(new UrlS3Response
+                {
+                    Url = s3ObjectUrl
+                });
+            }
+            
             var objectKey = await _offtubeClient.GetFileKeyAsync(
                 request.Url,
                 cancellationToken);
@@ -43,14 +63,41 @@ namespace Unisonmusic.Api.Controllers
                     "Failed to upload file");
             }
 
-            //получить ссылку на файл в s3
-            var url = _storageService.GetPresignedUrl(objectKey);
+            try
+            {
+                await _dbContext.Tracks.AddAsync(new DAL.Entities.TrackEntity
+                {
+                    Url = request.Url,
+                    S3ObjectKey = objectKey,
+                });
 
-            //сохраняем в бд запись s3Url(она временная возможно ее не нужно сохранять), objectKey
+                await _dbContext.SaveChangesAsync();
+            }
+            catch (DbUpdateException ex)
+            {
+                // запись уже вставлена другим запросом
+
+                var savedTrack = await _dbContext.Tracks
+                    .AsNoTracking()
+                    .FirstOrDefaultAsync(
+                        t => t.Url == request.Url,
+                        cancellationToken);
+
+                if (savedTrack == null)
+                {
+                    return StatusCode(
+                        StatusCodes.Status500InternalServerError,
+                        "Failed to get saved track");
+                }
+
+                objectKey = savedTrack.S3ObjectKey;
+            }
+
+            var s3Url = _storageService.GetPresignedUrl(objectKey);
 
             return Ok(new UrlS3Response
             {
-                Url = url
+                Url = s3Url
             });
         }
     }
