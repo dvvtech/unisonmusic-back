@@ -14,10 +14,16 @@ startup.Initialize();
 
 var app = builder.Build();
 
-app.UseSwagger();
-app.UseSwaggerUI();
+if (app.Environment.IsDevelopment())
+{
+    app.UseSwagger();
+    app.UseSwaggerUI();
+}
+//else
+//{
+    app.ApplyCors();
+//}
 
-app.ApplyCors();
 app.UseHttpsRedirection();
 app.UseAuthorization();
 

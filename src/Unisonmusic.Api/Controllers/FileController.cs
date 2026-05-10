@@ -1,5 +1,4 @@
-﻿using Microsoft.AspNetCore.Http;
-using Microsoft.AspNetCore.Mvc;
+﻿using Microsoft.AspNetCore.Mvc;
 using Unisonmusic.Api.Models;
 using Unisonmusic.Api.Services.Abstract;
 
@@ -10,10 +9,13 @@ namespace Unisonmusic.Api.Controllers
     public class FileController : ControllerBase
     {
         private readonly IOfftubeClient _offtubeClient;
+        private readonly IStorageService _storageService;
 
-        public FileController(IOfftubeClient offtubeClient)
+        public FileController(
+            IOfftubeClient offtubeClient, IStorageService storageService)
         {
             _offtubeClient = offtubeClient;
+            _storageService = storageService;
         }
 
         [HttpPost("upload-from-url")]
@@ -26,20 +28,29 @@ namespace Unisonmusic.Api.Controllers
                 return BadRequest("Url is required");
             }
 
-            var key = await _offtubeClient.GetFileKeyAsync(
+            //обращаемся к бд нет ли такой уже ссылки
+            //если есть то возвращаем ее key
+            //если нет то идем дальше
+
+            var objectKey = await _offtubeClient.GetFileKeyAsync(
                 request.Url,
                 cancellationToken);
 
-            if (string.IsNullOrWhiteSpace(key))
+            if (string.IsNullOrWhiteSpace(objectKey))
             {
                 return StatusCode(
                     StatusCodes.Status500InternalServerError,
                     "Failed to upload file");
             }
 
-            return Ok(new UploadResponse
+            //получить ссылку на файл в s3
+            var url = _storageService.GetPresignedUrl(objectKey);
+
+            //сохраняем в бд запись s3Url(она временная возможно ее не нужно сохранять), objectKey
+
+            return Ok(new UrlS3Response
             {
-                Key = key
+                Url = url
             });
         }
     }

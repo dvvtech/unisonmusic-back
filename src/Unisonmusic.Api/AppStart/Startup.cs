@@ -17,20 +17,19 @@ namespace Unisonmusic.Api.AppStart
 
         public void Initialize()
         {
-            _builder.Services.AddSwaggerGen();
-            _builder.Services.ConfigureCors();
+            if (_builder.Environment.IsDevelopment())
+            {
+                _builder.Services.AddSwaggerGen();
+            }
+            //else
+            //{
+                _builder.Services.ConfigureCors();
+            //}
 
             InitConfigs();
             ConfigureServices();
 
-            _builder.Services.AddControllers();
-            _builder.Services
-                .AddSignalR()
-                .AddJsonProtocol(options =>
-                {
-                    // SignalR client code expects camelCase JSON fields.
-                    options.PayloadSerializerOptions.PropertyNamingPolicy = JsonNamingPolicy.CamelCase;
-                });
+            _builder.Services.AddControllers();            
         }
 
         private void InitConfigs()
@@ -40,13 +39,15 @@ namespace Unisonmusic.Api.AppStart
                 _builder.Configuration.AddKeyPerFile("/run/secrets", optional: true);
             }
 
-            var configSection = _builder.Configuration.GetSection(GoogleRecaptchaConfig.SectionName);
+            _builder.Services.Configure<GoogleRecaptchaConfig>(_builder.Configuration.GetSection(GoogleRecaptchaConfig.SectionName));
+            _builder.Services.Configure<S3CloudConfig>(_builder.Configuration.GetSection(S3CloudConfig.SectionName));
         }
 
         private void ConfigureServices()
         {
             _builder.Services.AddSingleton<IRoomService, RoomService>();
             _builder.Services.AddScoped<IOfftubeClient, OfftubeClient>();
+            _builder.Services.AddScoped<IStorageService, S3StorageService>();
 
             _builder.Services.AddHttpClient<IOfftubeClient, OfftubeClient>((serviceProvider, client) =>
             {
@@ -56,6 +57,14 @@ namespace Unisonmusic.Api.AppStart
                 client.Timeout = TimeSpan.FromSeconds(45); // Таймаут запроса
                 //client.DefaultRequestHeaders.Add("Authorization", $"Bearer {config.SecretKeyForOfftube}");
             });
+
+            _builder.Services
+                .AddSignalR()
+                .AddJsonProtocol(options =>
+                {
+                    // SignalR client code expects camelCase JSON fields.
+                    options.PayloadSerializerOptions.PropertyNamingPolicy = JsonNamingPolicy.CamelCase;
+                });
         }
     }
 }

@@ -37,7 +37,7 @@ namespace Unisonmusic.Api.Services
                 var result = await response.Content
                     .ReadFromJsonAsync<UploadResponse>(cancellationToken);
 
-                return result.Key;
+                return result.ObjectKey;
             }
             catch (Exception ex)
             {
