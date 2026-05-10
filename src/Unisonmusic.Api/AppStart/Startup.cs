@@ -29,7 +29,7 @@ namespace Unisonmusic.Api.AppStart
 
             InitConfigs();
             ConfigureServices();
-            //SetupDb();
+            SetupDb();
 
             _builder.Services.AddControllers();            
         }
