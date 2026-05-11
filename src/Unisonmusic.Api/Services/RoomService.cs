@@ -9,9 +9,14 @@ namespace Unisonmusic.Api.Services;
 public sealed class RoomService : IRoomService
 {
     private static readonly TimeSpan StartDelay = TimeSpan.FromSeconds(3);
+    private const int ShortRoomCodeLength = 3;
+    private const int LongRoomCodeLength = 4;
+    private const int RoomCodeExpansionThreshold = 900;
+    private const int MaxRoomCount = 9999;
 
     private readonly ConcurrentDictionary<string, Room> _rooms = new();
     private readonly ConcurrentDictionary<string, string> _connectionRooms = new();
+    private readonly object _roomCreationSync = new();
     private readonly ILogger<RoomService> _logger;
 
     public RoomService(ILogger<RoomService> logger)
@@ -21,10 +26,20 @@ public sealed class RoomService : IRoomService
 
     public Room CreateRoom(string connectionId, ClientDeviceInfo? deviceInfo, string? userAgent)
     {
-        var room = new Room { Code = GenerateRoomCode() };
-        AddUser(room, connectionId, deviceInfo, userAgent);
-        _rooms[room.Code] = room;
-        _connectionRooms[connectionId] = room.Code;
+        Room room;
+
+        lock (_roomCreationSync)
+        {
+            if (_rooms.Count >= MaxRoomCount)
+            {
+                throw new InvalidOperationException($"Достигнуто максимальное количество комнат: {MaxRoomCount}.");
+            }
+
+            room = new Room { Code = GenerateRoomCode() };
+            AddUser(room, connectionId, deviceInfo, userAgent);
+            _rooms[room.Code] = room;
+            _connectionRooms[connectionId] = room.Code;
+        }
 
         _logger.LogInformation("Room {RoomCode} created by {ConnectionId}", room.Code, connectionId);
         return room;
@@ -212,9 +227,26 @@ public sealed class RoomService : IRoomService
 
     private string GenerateRoomCode()
     {
-        for (var attempt = 0; attempt < 100; attempt++)
+        var codeLength = _rooms.Count > RoomCodeExpansionThreshold
+            ? LongRoomCodeLength
+            : ShortRoomCodeLength;
+        var maxExclusive = (int)Math.Pow(10, codeLength);
+
+        for (var attempt = 0; attempt < 64; attempt++)
         {
-            var code = RandomNumberGenerator.GetInt32(0, 1_000_000).ToString("D6");
+            var code = RandomNumberGenerator
+                .GetInt32(0, maxExclusive)
+                .ToString($"D{codeLength}");
+
+            if (!_rooms.ContainsKey(code))
+            {
+                return code;
+            }
+        }
+
+        for (var value = 0; value < maxExclusive; value++)
+        {
+            var code = value.ToString($"D{codeLength}");
 
             if (!_rooms.ContainsKey(code))
             {
@@ -464,9 +496,10 @@ public sealed class RoomService : IRoomService
     {
         var normalizedCode = roomCode.Trim();
 
-        if (normalizedCode.Length != 6 || !normalizedCode.All(char.IsDigit))
+        if ((normalizedCode.Length != ShortRoomCodeLength && normalizedCode.Length != LongRoomCodeLength) ||
+            !normalizedCode.All(char.IsDigit))
         {
-            throw new InvalidOperationException("Код комнаты должен состоять из 6 цифр.");
+            throw new InvalidOperationException("Код комнаты должен состоять из 3 или 4 цифр.");
         }
 
         return normalizedCode;
