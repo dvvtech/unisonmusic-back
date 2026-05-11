@@ -35,7 +35,9 @@ namespace Unisonmusic.Api.Controllers
                 return BadRequest("Url is required");
             }
 
-            int userId = 1;//временно заахардкожено
+            // TODO:
+            // брать из JWT/Auth
+            int userId = 1;
 
             request.Url = request.Url.Trim();
 
@@ -46,94 +48,115 @@ namespace Unisonmusic.Api.Controllers
                     cancellationToken);
 
             if (existingTrack != null)
-            {                
-                var exists = await _dbContext.UserTracks.AnyAsync(x =>
-                    x.UserId == userId &&
-                    x.TrackId == existingTrack.Id);
-
-                if (!exists)
-                {
-                    _dbContext.UserTracks.Add(new UserTrackEntity
-                    {
-                        UserId = userId,
-                        TrackId = existingTrack.Id,
-                        CreatedAtUtc = DateTime.UtcNow
-                    });
-
-                    await _dbContext.SaveChangesAsync();
-                }
-
-                var s3ObjectUrl = _storageService.GetPresignedUrl(existingTrack.S3ObjectKey);
+            {
+                await EnsureUserTrackExistsAsync(
+                    userId,
+                    existingTrack.Id,
+                    cancellationToken);
 
                 return Ok(new UrlS3Response
                 {
                     Url = existingTrack.Url,
-                    S3Url = s3ObjectUrl,
+                    S3Url = _storageService.GetPresignedUrl(
+                        existingTrack.S3ObjectKey),
                     TrackTitle = existingTrack.Title
                 });
             }
-            
-            UploadResponse uploadResponse = await _offtubeClient.GetFileKeyAsync(
+
+            var uploadResponse = await _offtubeClient.GetFileKeyAsync(
                 request.Url,
                 cancellationToken);
 
-            if (uploadResponse == null || string.IsNullOrWhiteSpace(uploadResponse.ObjectKey))
+            if (uploadResponse == null ||
+                string.IsNullOrWhiteSpace(uploadResponse.ObjectKey))
             {
                 return StatusCode(
                     StatusCodes.Status500InternalServerError,
                     "Failed to upload file");
             }
 
+            TrackEntity trackEntity;
+
             try
             {
-                var trackEntity = new TrackEntity
+                trackEntity = new TrackEntity
                 {
                     Url = request.Url,
                     S3ObjectKey = uploadResponse.ObjectKey,
                     Title = uploadResponse.TrackTitle
                 };
 
-                await _dbContext.Tracks.AddAsync(trackEntity);
+                await _dbContext.Tracks.AddAsync(
+                    trackEntity,
+                    cancellationToken);
 
-                await _dbContext.SaveChangesAsync();
-
-                _dbContext.UserTracks.Add(new UserTrackEntity
-                {
-                    UserId = userId,
-                    TrackId = trackEntity.Id,
-                    CreatedAtUtc = DateTime.UtcNow
-                });
-
-                await _dbContext.SaveChangesAsync();
+                await _dbContext.SaveChangesAsync(cancellationToken);
             }
-            catch (DbUpdateException ex)
+            catch (DbUpdateException)
             {
-                // запись уже вставлена другим запросом
+                // другой запрос уже создал Track
 
-                var savedTrack = await _dbContext.Tracks
+                trackEntity = await _dbContext.Tracks
                     .AsNoTracking()
                     .FirstOrDefaultAsync(
                         t => t.Url == request.Url,
                         cancellationToken);
 
-                if (savedTrack == null)
+                if (trackEntity == null)
                 {
                     return StatusCode(
                         StatusCodes.Status500InternalServerError,
                         "Failed to get saved track");
                 }
-
-                uploadResponse.ObjectKey = savedTrack.S3ObjectKey;
             }
 
-            var s3Url = _storageService.GetPresignedUrl(uploadResponse.ObjectKey);
+            await EnsureUserTrackExistsAsync(
+                userId,
+                trackEntity.Id,
+                cancellationToken);
 
             return Ok(new UrlS3Response
             {
-                Url = request.Url,
-                S3Url = s3Url,
-                TrackTitle = uploadResponse.TrackTitle
+                Url = trackEntity.Url,
+                S3Url = _storageService.GetPresignedUrl(
+                    trackEntity.S3ObjectKey),
+                TrackTitle = trackEntity.Title
             });
+        }
+
+        private async Task EnsureUserTrackExistsAsync(
+            int userId,
+            long trackId,
+            CancellationToken cancellationToken)
+        {
+            var exists = await _dbContext.UserTracks
+                .AnyAsync(
+                    x => x.UserId == userId &&
+                         x.TrackId == trackId,
+                    cancellationToken);
+
+            if (exists)
+            {
+                return;
+            }
+
+            try
+            {
+                await _dbContext.UserTracks.AddAsync(
+                    new UserTrackEntity
+                    {
+                        UserId = userId,
+                        TrackId = trackId,
+                        CreatedAtUtc = DateTime.UtcNow
+                    },
+                    cancellationToken);
+
+                await _dbContext.SaveChangesAsync(cancellationToken);
+            }
+            catch (DbUpdateException)
+            {
+                // другой запрос уже создал связь
+            }
         }
     }
 }
