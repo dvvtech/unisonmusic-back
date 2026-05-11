@@ -57,11 +57,11 @@ public sealed class MusicHub : Hub
         }
     }
 
-    public async Task<RoomSnapshotDto> SetTrack(string url)
+    public async Task<RoomSnapshotDto> SetTrack(string url, string? title = null, string? sourceUrl = null)
     {
         try
         {
-            var room = _roomService.SetTrack(Context.ConnectionId, url);
+            var room = _roomService.SetTrack(Context.ConnectionId, url, title, sourceUrl);
             var snapshot = _roomService.ToSnapshot(room);
 
             await Clients.Group(room.Code).SendAsync("TrackUpdated", snapshot);

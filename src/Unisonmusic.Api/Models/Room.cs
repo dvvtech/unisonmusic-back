@@ -7,6 +7,8 @@ public sealed class Room
     public required string Code { get; init; }
     public ConcurrentDictionary<string, User> Users { get; } = new();
     public string? TrackUrl { get; set; }
+    public string? TrackSourceUrl { get; set; }
+    public string? TrackTitle { get; set; }
     public bool IsPlaybackScheduled { get; set; }
     public DateTimeOffset? ScheduledStartAtUtc { get; set; }
     public DateTimeOffset CreatedAtUtc { get; init; } = DateTimeOffset.UtcNow;
