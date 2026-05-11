@@ -53,6 +53,8 @@ namespace Unisonmusic.Api.AppStart
 
         private void ConfigureServices()
         {
+            _builder.Services.AddSingleton<ITrackDownloadLockService, TrackDownloadLockService>();
+
             _builder.Services.AddSingleton<IRoomService, RoomService>();
             _builder.Services.AddScoped<IOfftubeClient, OfftubeClient>();
             _builder.Services.AddScoped<IStorageService, S3StorageService>();            

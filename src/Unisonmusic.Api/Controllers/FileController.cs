@@ -14,15 +14,18 @@ namespace Unisonmusic.Api.Controllers
         private readonly IOfftubeClient _offtubeClient;
         private readonly IStorageService _storageService;
         private readonly UnisonmusicDbContext _dbContext;
+        private readonly ITrackDownloadLockService _lockService;
 
         public FileController(
             IOfftubeClient offtubeClient,
             IStorageService storageService,
-            UnisonmusicDbContext dbContext)
+            UnisonmusicDbContext dbContext,
+            ITrackDownloadLockService lockService)
         {
             _offtubeClient = offtubeClient;
             _storageService = storageService;
             _dbContext = dbContext;
+            _lockService = lockService;
         }
 
         [HttpPost("upload-from-url")]
@@ -36,11 +39,12 @@ namespace Unisonmusic.Api.Controllers
             }
 
             // TODO:
-            // брать из JWT/Auth
+            // получать из JWT/Auth
             int userId = 1;
 
             request.Url = request.Url.Trim();
 
+            // Первая проверка БД без lock
             var existingTrack = await _dbContext.Tracks
                 .AsNoTracking()
                 .FirstOrDefaultAsync(
@@ -54,15 +58,33 @@ namespace Unisonmusic.Api.Controllers
                     existingTrack.Id,
                     cancellationToken);
 
-                return Ok(new UrlS3Response
-                {
-                    Url = existingTrack.Url,
-                    S3Url = _storageService.GetPresignedUrl(
-                        existingTrack.S3ObjectKey),
-                    TrackTitle = existingTrack.Title
-                });
+                return Ok(CreateResponse(existingTrack));
             }
 
+            // lock по url
+            using var downloadLock = await _lockService.AcquireAsync(
+                request.Url,
+                cancellationToken);
+
+            // ВАЖНО:
+            // повторная проверка после ожидания lock
+            existingTrack = await _dbContext.Tracks
+                .AsNoTracking()
+                .FirstOrDefaultAsync(
+                    t => t.Url == request.Url,
+                    cancellationToken);
+
+            if (existingTrack != null)
+            {
+                await EnsureUserTrackExistsAsync(
+                    userId,
+                    existingTrack.Id,
+                    cancellationToken);
+
+                return Ok(CreateResponse(existingTrack));
+            }
+
+            // Реально качаем только здесь
             var uploadResponse = await _offtubeClient.GetFileKeyAsync(
                 request.Url,
                 cancellationToken);
@@ -94,8 +116,7 @@ namespace Unisonmusic.Api.Controllers
             }
             catch (DbUpdateException)
             {
-                // другой запрос уже создал Track
-
+                // На случай race condition между инстансами (другой запрос уже создал Track)                
                 trackEntity = await _dbContext.Tracks
                     .AsNoTracking()
                     .FirstOrDefaultAsync(
@@ -115,13 +136,7 @@ namespace Unisonmusic.Api.Controllers
                 trackEntity.Id,
                 cancellationToken);
 
-            return Ok(new UrlS3Response
-            {
-                Url = trackEntity.Url,
-                S3Url = _storageService.GetPresignedUrl(
-                    trackEntity.S3ObjectKey),
-                TrackTitle = trackEntity.Title
-            });
+            return Ok(CreateResponse(trackEntity));
         }
 
         private async Task EnsureUserTrackExistsAsync(
@@ -157,6 +172,17 @@ namespace Unisonmusic.Api.Controllers
             {
                 // другой запрос уже создал связь
             }
+        }
+
+        private UrlS3Response CreateResponse(TrackEntity track)
+        {
+            return new UrlS3Response
+            {
+                Url = track.Url,
+                S3Url = _storageService.GetPresignedUrl(
+                    track.S3ObjectKey),
+                TrackTitle = track.Title
+            };
         }
     }
 }
