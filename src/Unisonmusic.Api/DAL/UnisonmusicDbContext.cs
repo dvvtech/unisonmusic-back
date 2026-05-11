@@ -8,6 +8,8 @@ namespace Unisonmusic.Api.DAL
     {
         public DbSet<TrackEntity> Tracks { get; set; }
 
+        public DbSet<UserTrackEntity> UserTracks { get; set; }
+
         public UnisonmusicDbContext(DbContextOptions<UnisonmusicDbContext> options)
             :base(options)
         {            
@@ -17,6 +19,7 @@ namespace Unisonmusic.Api.DAL
         {
             // Регистрация конфигураций
             modelBuilder.ApplyConfiguration(new TracksConfiguration());
+            modelBuilder.ApplyConfiguration(new UserTracksConfiguration());            
 
             base.OnModelCreating(modelBuilder);
         }

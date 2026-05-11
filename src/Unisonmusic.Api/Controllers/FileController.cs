@@ -1,6 +1,7 @@
 ﻿using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using Unisonmusic.Api.DAL;
+using Unisonmusic.Api.DAL.Entities;
 using Unisonmusic.Api.Models;
 using Unisonmusic.Api.Services.Abstract;
 
@@ -34,6 +35,8 @@ namespace Unisonmusic.Api.Controllers
                 return BadRequest("Url is required");
             }
 
+            int userId = 1;//временно заахардкожено
+
             request.Url = request.Url.Trim();
 
             var existingTrack = await _dbContext.Tracks
@@ -43,7 +46,23 @@ namespace Unisonmusic.Api.Controllers
                     cancellationToken);
 
             if (existingTrack != null)
-            {
+            {                
+                var exists = await _dbContext.UserTracks.AnyAsync(x =>
+                    x.UserId == userId &&
+                    x.TrackId == existingTrack.Id);
+
+                if (!exists)
+                {
+                    _dbContext.UserTracks.Add(new UserTrackEntity
+                    {
+                        UserId = userId,
+                        TrackId = existingTrack.Id,
+                        CreatedAtUtc = DateTime.UtcNow
+                    });
+
+                    await _dbContext.SaveChangesAsync();
+                }
+
                 var s3ObjectUrl = _storageService.GetPresignedUrl(existingTrack.S3ObjectKey);
 
                 return Ok(new UrlS3Response
@@ -67,11 +86,22 @@ namespace Unisonmusic.Api.Controllers
 
             try
             {
-                await _dbContext.Tracks.AddAsync(new DAL.Entities.TrackEntity
+                var trackEntity = new TrackEntity
                 {
                     Url = request.Url,
                     S3ObjectKey = uploadResponse.ObjectKey,
                     Title = uploadResponse.TrackTitle
+                };
+
+                await _dbContext.Tracks.AddAsync(trackEntity);
+
+                await _dbContext.SaveChangesAsync();
+
+                _dbContext.UserTracks.Add(new UserTrackEntity
+                {
+                    UserId = userId,
+                    TrackId = trackEntity.Id,
+                    CreatedAtUtc = DateTime.UtcNow
                 });
 
                 await _dbContext.SaveChangesAsync();

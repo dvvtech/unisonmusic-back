@@ -9,5 +9,8 @@
         public string S3ObjectKey { get; set; }
 
         public string Title { get; set; }
+
+        public ICollection<UserTrackEntity> UserTracks { get; set; }
+            = new List<UserTrackEntity>();
     }
 }
