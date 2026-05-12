@@ -57,6 +57,12 @@ public sealed class MusicHub : Hub
         }
     }
 
+    public async Task LeaveRoom()
+    {
+        await LeaveCurrentRoomAsync();
+        await Clients.Caller.SendAsync("RoomLeft");
+    }
+
     public async Task<RoomSnapshotDto> SetTrack(string url, string? title = null, string? sourceUrl = null)
     {
         try
