@@ -1,25 +1,24 @@
 using Unisonmusic.Api.DAL;
 using Unisonmusic.Migrator;
 
+var builder = WebApplication.CreateBuilder(args);
+
 var environmentName = args.FirstOrDefault() ??
                               Environment.GetEnvironmentVariable("ASPNETCORE_ENVIRONMENT") ??
                               throw new InvalidOperationException("ASPNETCORE_ENVIRONMENT in not set");
 
-var configuration = new ConfigurationBuilder()
+builder.Configuration
     .SetBasePath(Directory.GetCurrentDirectory())
-    .AddJsonFile($"appsettings.{environmentName}.json")
-    .Build();
+    .AddJsonFile($"appsettings.{environmentName}.json", optional: false, reloadOnChange: true);
 
-var serviceCollection = new ServiceCollection();
-serviceCollection.AddSingleton<IConfiguration>(configuration);
-serviceCollection.AddTransient<MigrationService>();
-serviceCollection.AddDAL(configuration);
+builder.Services.AddTransient<MigrationService>();
+builder.Services.AddDAL(builder.Configuration);
 
-var serviceProvider = serviceCollection.BuildServiceProvider();
+var app = builder.Build();
 
 try
 {
-    var migrationService = serviceProvider.GetRequiredService<MigrationService>();
+    var migrationService = app.Services.GetRequiredService<MigrationService>();
     await migrationService.MigrateAsync(CancellationToken.None);
 }
 catch (Exception ex)
