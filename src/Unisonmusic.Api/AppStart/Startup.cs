@@ -1,3 +1,6 @@
+using Microsoft.AspNetCore.Authentication.JwtBearer;
+using Microsoft.IdentityModel.Tokens;
+using System.Text;
 using System.Text.Json;
 using Unisonmusic.Api.AppStart.Extensions;
 using Unisonmusic.Api.Configuration;
@@ -31,6 +34,8 @@ namespace Unisonmusic.Api.AppStart
             ConfigureServices();
             SetupDb();
 
+            ConfigureAuthentication();
+
             _builder.Services.AddControllers();            
         }
 
@@ -44,6 +49,11 @@ namespace Unisonmusic.Api.AppStart
             _builder.Services.Configure<GoogleRecaptchaConfig>(_builder.Configuration.GetSection(GoogleRecaptchaConfig.SectionName));
             _builder.Services.Configure<S3CloudConfig>(_builder.Configuration.GetSection(S3CloudConfig.SectionName));
             _builder.Services.Configure<DatabaseOptions>(_builder.Configuration.GetSection(DatabaseOptions.SectionName));
+
+            _builder.Services.AddOptions<JwtConfig>()
+                .Bind(_builder.Configuration.GetSection(JwtConfig.SectionName))
+                .ValidateDataAnnotations()
+                .ValidateOnStart();
         }
 
         private void SetupDb()
@@ -74,6 +84,28 @@ namespace Unisonmusic.Api.AppStart
                 {
                     // SignalR client code expects camelCase JSON fields.
                     options.PayloadSerializerOptions.PropertyNamingPolicy = JsonNamingPolicy.CamelCase;
+                });
+        }
+
+        private void ConfigureAuthentication()
+        {
+            var jwtConfig = _builder.Configuration
+                .GetSection(JwtConfig.SectionName)
+                .Get<JwtConfig>();
+
+            _builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
+                .AddJwtBearer(options =>
+                {
+                    options.TokenValidationParameters = new TokenValidationParameters
+                    {
+                        ValidateIssuer = true,
+                        ValidateAudience = true,
+                        ValidateLifetime = true,
+                        ValidateIssuerSigningKey = true,
+                        ValidIssuer = jwtConfig.Issuer,
+                        ValidAudience = jwtConfig.Audience,
+                        IssuerSigningKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(jwtConfig.Key))
+                    };
                 });
         }
     }

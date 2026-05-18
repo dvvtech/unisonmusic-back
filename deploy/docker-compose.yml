@@ -6,6 +6,7 @@ services:
     networks:
       - public-network5
     secrets:
+      - Jwt__Key
       - GoogleRecaptcha__SecretKeyForOfftube
       - S3CloudConfig__TenantId      
       - S3CloudConfig__AccessKey
@@ -30,6 +31,8 @@ networks:
     external: true
 
 secrets:
+  Jwt__Key:
+    external: true  
   GoogleRecaptcha__SecretKeyForOfftube:
     external: true
   S3CloudConfig__TenantId:

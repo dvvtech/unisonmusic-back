@@ -1,3 +1,4 @@
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Unisonmusic.Api.Models.Dtos;
 using Unisonmusic.Api.Services.Abstract;
@@ -36,6 +37,12 @@ public sealed class RoomsController : ControllerBase
 
     [HttpGet("test")]
     public ActionResult<string> Test()
+    {
+        return Ok("579");
+    }
+
+    [HttpGet("test2"), Authorize]
+    public ActionResult<string> Test2()
     {
         return Ok("579");
     }

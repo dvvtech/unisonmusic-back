@@ -24,8 +24,10 @@ if (app.Environment.IsDevelopment())
     app.ApplyCors();
 //}
 
-//app.UseHttpsRedirection();
-//app.UseAuthorization();
+app.UseCookiePolicy();
+app.UseMiddleware<CookieTokenMiddleware>();
+app.UseAuthentication();
+app.UseAuthorization();
 
 app.MapControllers();
 app.MapHub<MusicHub>("/hubs/music");
