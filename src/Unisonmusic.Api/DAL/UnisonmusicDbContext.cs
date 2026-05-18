@@ -10,6 +10,10 @@ namespace Unisonmusic.Api.DAL
 
         public DbSet<UserTrackEntity> UserTracks { get; set; }
 
+        public DbSet<PlaylistEntity> Playlists { get; set; }
+
+        public DbSet<PlaylistTrackEntity> PlaylistTracks { get; set; }
+
         public UnisonmusicDbContext(DbContextOptions<UnisonmusicDbContext> options)
             :base(options)
         {            
@@ -19,7 +23,9 @@ namespace Unisonmusic.Api.DAL
         {
             // Регистрация конфигураций
             modelBuilder.ApplyConfiguration(new TracksConfiguration());
-            modelBuilder.ApplyConfiguration(new UserTracksConfiguration());            
+            modelBuilder.ApplyConfiguration(new UserTracksConfiguration());
+            modelBuilder.ApplyConfiguration(new PlaylistsConfiguration());
+            modelBuilder.ApplyConfiguration(new PlaylistTracksConfiguration());
 
             base.OnModelCreating(modelBuilder);
         }

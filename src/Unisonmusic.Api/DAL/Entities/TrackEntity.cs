@@ -12,5 +12,8 @@
 
         public ICollection<UserTrackEntity> UserTracks { get; set; }
             = new List<UserTrackEntity>();
+
+        public ICollection<PlaylistTrackEntity> PlaylistTracks { get; set; }
+            = new List<PlaylistTrackEntity>();
     }
 }

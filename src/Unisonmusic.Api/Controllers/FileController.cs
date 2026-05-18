@@ -2,6 +2,7 @@
 using Microsoft.EntityFrameworkCore;
 using Unisonmusic.Api.DAL;
 using Unisonmusic.Api.DAL.Entities;
+using Unisonmusic.Api.Extensions;
 using Unisonmusic.Api.Models;
 using Unisonmusic.Api.Services.Abstract;
 
@@ -38,9 +39,7 @@ namespace Unisonmusic.Api.Controllers
                 return BadRequest("Url is required");
             }
 
-            // TODO:
-            // получать из JWT/Auth
-            int userId = 1;
+            var userId = this.GetCurrentAccountId();
 
             request.Url = request.Url.Trim();
 
@@ -53,10 +52,13 @@ namespace Unisonmusic.Api.Controllers
 
             if (existingTrack != null)
             {
-                await EnsureUserTrackExistsAsync(
-                    userId,
-                    existingTrack.Id,
-                    cancellationToken);
+                if (userId.HasValue)
+                {
+                    await EnsureUserTrackExistsAsync(
+                        userId.Value,
+                        existingTrack.Id,
+                        cancellationToken);
+                }
 
                 return Ok(CreateResponse(existingTrack));
             }
@@ -76,10 +78,13 @@ namespace Unisonmusic.Api.Controllers
 
             if (existingTrack != null)
             {
-                await EnsureUserTrackExistsAsync(
-                    userId,
-                    existingTrack.Id,
-                    cancellationToken);
+                if (userId.HasValue)
+                {
+                    await EnsureUserTrackExistsAsync(
+                        userId.Value,
+                        existingTrack.Id,
+                        cancellationToken);
+                }
 
                 return Ok(CreateResponse(existingTrack));
             }
@@ -131,10 +136,13 @@ namespace Unisonmusic.Api.Controllers
                 }
             }
 
-            await EnsureUserTrackExistsAsync(
-                userId,
-                trackEntity.Id,
-                cancellationToken);
+            if (userId.HasValue)
+            {
+                await EnsureUserTrackExistsAsync(
+                    userId.Value,
+                    trackEntity.Id,
+                    cancellationToken);
+            }
 
             return Ok(CreateResponse(trackEntity));
         }
@@ -178,6 +186,7 @@ namespace Unisonmusic.Api.Controllers
         {
             return new UrlS3Response
             {
+                TrackId = track.Id,
                 Url = track.Url,
                 S3Url = _storageService.GetPresignedUrl(
                     track.S3ObjectKey),

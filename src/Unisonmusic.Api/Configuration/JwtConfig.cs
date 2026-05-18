@@ -6,7 +6,7 @@ namespace Unisonmusic.Api.Configuration
     {
         public const string SectionName = "Jwt";
 
-        [Required, MinLength(10)]
+        //[Required, MinLength(10)]
         public string Key { get; init; }
 
         [Required]

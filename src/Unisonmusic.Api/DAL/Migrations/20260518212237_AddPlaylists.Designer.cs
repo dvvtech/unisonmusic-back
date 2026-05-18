@@ -2,6 +2,7 @@
 using System;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 using Unisonmusic.Api.DAL;
@@ -11,9 +12,11 @@ using Unisonmusic.Api.DAL;
 namespace Unisonmusic.Api.DAL.Migrations
 {
     [DbContext(typeof(UnisonmusicDbContext))]
-    partial class UnisonmusicDbContextModelSnapshot : ModelSnapshot
+    [Migration("20260518212237_AddPlaylists")]
+    partial class AddPlaylists
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
