@@ -103,7 +103,7 @@ public sealed class RoomService : IRoomService
         return room;
     }
 
-    public Room SetTrack(string connectionId, string url, string? title = null, string? sourceUrl = null)
+    public Room SetTrack(string connectionId, string url, string? title = null, string? sourceUrl = null, long? trackId = null)
     {
         if (!Uri.TryCreate(url, UriKind.Absolute, out var uri) ||
             (uri.Scheme != Uri.UriSchemeHttp && uri.Scheme != Uri.UriSchemeHttps))
@@ -118,6 +118,7 @@ public sealed class RoomService : IRoomService
             room.TrackUrl = uri.ToString();
             room.TrackSourceUrl = string.IsNullOrWhiteSpace(sourceUrl) ? null : sourceUrl.Trim();
             room.TrackTitle = string.IsNullOrWhiteSpace(title) ? null : title.Trim();
+            room.TrackId = trackId;
             room.IsPlaybackScheduled = false;
             room.ScheduledStartAtUtc = null;
 
@@ -218,6 +219,7 @@ public sealed class RoomService : IRoomService
                 room.TrackUrl,
                 room.TrackSourceUrl,
                 room.TrackTitle,
+                room.TrackId,
                 room.AllUsersReady,
                 room.IsPlaybackScheduled,
                 room.ScheduledStartAtUtc,

@@ -9,6 +9,7 @@ public sealed class Room
     public string? TrackUrl { get; set; }
     public string? TrackSourceUrl { get; set; }
     public string? TrackTitle { get; set; }
+    public long? TrackId { get; set; }
     public bool IsPlaybackScheduled { get; set; }
     public DateTimeOffset? ScheduledStartAtUtc { get; set; }
     public DateTimeOffset CreatedAtUtc { get; init; } = DateTimeOffset.UtcNow;

@@ -5,6 +5,7 @@ public sealed record RoomSnapshotDto(
     string? TrackUrl,
     string? TrackSourceUrl,
     string? TrackTitle,
+    long? TrackId,
     bool AllReady,
     bool IsPlaybackScheduled,
     DateTimeOffset? ScheduledStartAtUtc,
