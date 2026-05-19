@@ -220,6 +220,34 @@ namespace Unisonmusic.Api.Controllers
             return Ok();
         }
 
+        [HttpDelete("{playlistId:long}")]
+        public async Task<ActionResult> DeletePlaylist(
+            long playlistId,
+            CancellationToken cancellationToken)
+        {
+            var userId = this.GetCurrentAccountId();
+            if (!userId.HasValue)
+            {
+                return Unauthorized();
+            }
+
+            var playlist = await _dbContext.Playlists
+                .FirstOrDefaultAsync(
+                    x => x.Id == playlistId &&
+                         x.UserId == userId.Value,
+                    cancellationToken);
+
+            if (playlist == null)
+            {
+                return NotFound("Playlist not found");
+            }
+
+            _dbContext.Playlists.Remove(playlist);
+            await _dbContext.SaveChangesAsync(cancellationToken);
+
+            return Ok();
+        }
+
         private async Task EnsureDefaultPlaylistExistsAsync(
             int userId,
             CancellationToken cancellationToken)
