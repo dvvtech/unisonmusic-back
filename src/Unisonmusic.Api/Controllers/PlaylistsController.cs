@@ -6,6 +6,7 @@ using Unisonmusic.Api.DAL.Entities;
 using Unisonmusic.Api.Extensions;
 using Unisonmusic.Api.Models;
 using Unisonmusic.Api.Models.Dtos;
+using Unisonmusic.Api.Services.Abstract;
 
 namespace Unisonmusic.Api.Controllers
 {
@@ -17,10 +18,14 @@ namespace Unisonmusic.Api.Controllers
         public const string LikedPlaylistName = "Понравившиеся";
 
         private readonly UnisonmusicDbContext _dbContext;
+        private readonly IStorageService _storageService;
 
-        public PlaylistsController(UnisonmusicDbContext dbContext)
+        public PlaylistsController(
+            UnisonmusicDbContext dbContext,
+            IStorageService storageService)
         {
             _dbContext = dbContext;
+            _storageService = storageService;
         }
 
         [HttpGet]
@@ -103,6 +108,52 @@ namespace Unisonmusic.Api.Controllers
                 CreatedAtUtc = playlist.CreatedAtUtc,
                 TrackCount = 0
             });
+        }
+
+        [HttpGet("{playlistId:long}/tracks")]
+        public async Task<ActionResult<IReadOnlyCollection<DownloadedTrackDto>>> GetPlaylistTracks(
+            long playlistId,
+            CancellationToken cancellationToken)
+        {
+            var userId = this.GetCurrentAccountId();
+            if (!userId.HasValue)
+            {
+                return Unauthorized();
+            }
+
+            var playlistExists = await _dbContext.Playlists
+                .AnyAsync(
+                    x => x.Id == playlistId &&
+                         x.UserId == userId.Value,
+                    cancellationToken);
+
+            if (!playlistExists)
+            {
+                return NotFound("Playlist not found");
+            }
+
+            var tracks = await _dbContext.PlaylistTracks
+                .AsNoTracking()
+                .Where(x => x.PlaylistId == playlistId)
+                .OrderByDescending(x => x.AddedAtUtc)
+                .Select(x => new
+                {
+                    x.TrackId,
+                    x.AddedAtUtc,
+                    x.Track.Url,
+                    x.Track.Title,
+                    x.Track.S3ObjectKey
+                })
+                .ToListAsync(cancellationToken);
+
+            return Ok(tracks.Select(x => new DownloadedTrackDto
+            {
+                Id = x.TrackId,
+                Url = x.Url,
+                TrackTitle = x.Title,
+                CreatedAtUtc = x.AddedAtUtc,
+                S3Url = _storageService.GetPresignedUrl(x.S3ObjectKey)
+            }));
         }
 
         [HttpPost("{playlistId:long}/tracks")]
