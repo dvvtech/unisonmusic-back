@@ -30,8 +30,9 @@ public sealed class MusicHub : Hub
 
             return snapshot;
         }
-        catch (InvalidOperationException exception)
+        catch (Exception exception)
         {
+            _logger.LogError(exception, "CreateRoom failed for connection {ConnectionId}", Context.ConnectionId);
             throw new HubException(exception.Message);
         }
     }
@@ -51,8 +52,9 @@ public sealed class MusicHub : Hub
 
             return snapshot;
         }
-        catch (InvalidOperationException exception)
+        catch (Exception exception)
         {
+            _logger.LogError(exception, "JoinRoom failed for connection {ConnectionId}", Context.ConnectionId);
             throw new HubException(exception.Message);
         }
     }
@@ -75,8 +77,9 @@ public sealed class MusicHub : Hub
 
             return snapshot;
         }
-        catch (InvalidOperationException exception)
+        catch (Exception exception)
         {
+            _logger.LogError(exception, "SetTrack failed for connection {ConnectionId}", Context.ConnectionId);
             throw new HubException(exception.Message);
         }
     }
@@ -97,8 +100,9 @@ public sealed class MusicHub : Hub
 
             return snapshot;
         }
-        catch (InvalidOperationException exception)
+        catch (Exception exception)
         {
+            _logger.LogError(exception, "SetReady failed for connection {ConnectionId}", Context.ConnectionId);
             throw new HubException(exception.Message);
         }
     }
@@ -110,8 +114,9 @@ public sealed class MusicHub : Hub
             var room = _roomService.GetRoomForConnection(Context.ConnectionId);
             return await SendPlaybackCommandAsync(room, 0);
         }
-        catch (InvalidOperationException exception)
+        catch (Exception exception)
         {
+            _logger.LogError(exception, "StartPlayback failed for connection {ConnectionId}", Context.ConnectionId);
             throw new HubException(exception.Message);
         }
     }
@@ -123,8 +128,9 @@ public sealed class MusicHub : Hub
             var room = _roomService.GetRoomForConnection(Context.ConnectionId);
             return await SendPlaybackCommandAsync(room, positionSeconds);
         }
-        catch (InvalidOperationException exception)
+        catch (Exception exception)
         {
+            _logger.LogError(exception, "ContinuePlayback failed for connection {ConnectionId}", Context.ConnectionId);
             throw new HubException(exception.Message);
         }
     }
@@ -154,8 +160,9 @@ public sealed class MusicHub : Hub
 
             return command;
         }
-        catch (InvalidOperationException exception)
+        catch (Exception exception)
         {
+            _logger.LogError(exception, "PausePlayback failed for connection {ConnectionId}", Context.ConnectionId);
             throw new HubException(exception.Message);
         }
     }
