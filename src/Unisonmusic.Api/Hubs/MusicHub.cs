@@ -69,12 +69,14 @@ public sealed class MusicHub : Hub
     {
         try
         {
+            _logger.LogInformation("1");
             var room = _roomService.SetTrack(Context.ConnectionId, url, title, sourceUrl, trackId);
+            _logger.LogInformation("2");
             var snapshot = _roomService.ToSnapshot(room);
-
+            _logger.LogInformation("3");
             await Clients.Group(room.Code).SendAsync("TrackUpdated", snapshot);
             await Clients.Group(room.Code).SendAsync("RoomUpdated", snapshot);
-
+            _logger.LogInformation("4");
             return snapshot;
         }
         catch (Exception exception)
