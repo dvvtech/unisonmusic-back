@@ -184,16 +184,15 @@ namespace Unisonmusic.Api.Controllers
                 return NotFound("Playlist not found");
             }
 
-            var userTrackExists = await _dbContext.UserTracks
-                .AnyAsync(
-                    x => x.UserId == userId.Value &&
-                         x.TrackId == request.TrackId,
-                    cancellationToken);
+            var trackExists = await _dbContext.Tracks
+                .AnyAsync(x => x.Id == request.TrackId, cancellationToken);
 
-            if (!userTrackExists)
+            if (!trackExists)
             {
-                return BadRequest("Track is not downloaded by current user");
+                return NotFound("Track not found");
             }
+
+            await EnsureUserTrackExistsAsync(userId.Value, request.TrackId, cancellationToken);
 
             var playlistTrackExists = await _dbContext.PlaylistTracks
                 .AnyAsync(
@@ -246,6 +245,40 @@ namespace Unisonmusic.Api.Controllers
             await _dbContext.SaveChangesAsync(cancellationToken);
 
             return Ok();
+        }
+
+        private async Task EnsureUserTrackExistsAsync(
+            int userId,
+            long trackId,
+            CancellationToken cancellationToken)
+        {
+            var exists = await _dbContext.UserTracks
+                .AnyAsync(
+                    x => x.UserId == userId &&
+                         x.TrackId == trackId,
+                    cancellationToken);
+
+            if (exists)
+            {
+                return;
+            }
+
+            try
+            {
+                await _dbContext.UserTracks.AddAsync(
+                    new UserTrackEntity
+                    {
+                        UserId = userId,
+                        TrackId = trackId,
+                        CreatedAtUtc = DateTime.UtcNow
+                    },
+                    cancellationToken);
+
+                await _dbContext.SaveChangesAsync(cancellationToken);
+            }
+            catch (DbUpdateException)
+            {
+            }
         }
 
         private async Task EnsureDefaultPlaylistExistsAsync(
