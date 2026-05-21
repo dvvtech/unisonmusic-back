@@ -8,7 +8,7 @@ namespace Unisonmusic.Api.Services;
 
 public sealed class RoomService : IRoomService
 {
-    private static readonly TimeSpan StartDelay = TimeSpan.FromMilliseconds(500);
+    private static readonly TimeSpan StartDelay = TimeSpan.FromSeconds(3);
     private const int ShortRoomCodeLength = 3;
     private const int LongRoomCodeLength = 4;
     private const int RoomCodeExpansionThreshold = 900;
