@@ -56,10 +56,9 @@ public class SubscriptionService : ISubscriptionService
         var existing = await dbContext.Subscriptions
             .FirstOrDefaultAsync(x => x.UserId == userId, cancellationToken);
 
-        if (existing is not null && existing.Plan == SubscriptionPlan.Plus &&
-            (existing.ExpiresAtUtc == null || existing.ExpiresAtUtc > DateTime.UtcNow))
+        if (existing is not null && existing.Plan == SubscriptionPlan.Plus)
         {
-            throw new InvalidOperationException("У вас уже есть активная подписка Unison+.");
+            throw new InvalidOperationException("Unison+ уже приобретён.");
         }
 
         var paymentId = Guid.NewGuid().ToString("N");
@@ -87,7 +86,7 @@ public class SubscriptionService : ISubscriptionService
             existing.Plan = SubscriptionPlan.Plus;
             existing.YooKassaPaymentId = yooKassaPaymentId;
             existing.ActivatedAtUtc = DateTime.UtcNow;
-            existing.ExpiresAtUtc = DateTime.UtcNow.AddMonths(1);
+            existing.ExpiresAtUtc = null;
         }
         else
         {
@@ -97,7 +96,7 @@ public class SubscriptionService : ISubscriptionService
                 Plan = SubscriptionPlan.Plus,
                 YooKassaPaymentId = yooKassaPaymentId,
                 ActivatedAtUtc = DateTime.UtcNow,
-                ExpiresAtUtc = DateTime.UtcNow.AddMonths(1)
+                ExpiresAtUtc = null
             });
         }
 
@@ -123,8 +122,7 @@ public class SubscriptionService : ISubscriptionService
             return SubscriptionPlan.Basic;
         }
 
-        if (subscription.Plan == SubscriptionPlan.Plus &&
-            (subscription.ExpiresAtUtc == null || subscription.ExpiresAtUtc > DateTime.UtcNow))
+        if (subscription.Plan == SubscriptionPlan.Plus)
         {
             return SubscriptionPlan.Plus;
         }
