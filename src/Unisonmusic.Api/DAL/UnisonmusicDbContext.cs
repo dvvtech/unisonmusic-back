@@ -14,6 +14,8 @@ namespace Unisonmusic.Api.DAL
 
         public DbSet<PlaylistTrackEntity> PlaylistTracks { get; set; }
 
+        public DbSet<SubscriptionEntity> Subscriptions { get; set; }
+
         public UnisonmusicDbContext(DbContextOptions<UnisonmusicDbContext> options)
             :base(options)
         {            
@@ -21,11 +23,11 @@ namespace Unisonmusic.Api.DAL
 
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {
-            // Регистрация конфигураций
             modelBuilder.ApplyConfiguration(new TracksConfiguration());
             modelBuilder.ApplyConfiguration(new UserTracksConfiguration());
             modelBuilder.ApplyConfiguration(new PlaylistsConfiguration());
             modelBuilder.ApplyConfiguration(new PlaylistTracksConfiguration());
+            modelBuilder.ApplyConfiguration(new SubscriptionsConfiguration());
 
             base.OnModelCreating(modelBuilder);
         }

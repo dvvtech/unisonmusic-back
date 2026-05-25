@@ -27,7 +27,8 @@ namespace Unisonmusic.Api.DAL
                 }
                 else
                 {
-                    options.UseNpgsql(dbOptions.ConnectionString);
+                    options.UseNpgsql("User ID=postgres;Password=curMal7Hof!;Host=176.108.255.113;Port=5432;Database=unisonmusic");
+                    //options.UseNpgsql(dbOptions.ConnectionString);
                 }
             });
 

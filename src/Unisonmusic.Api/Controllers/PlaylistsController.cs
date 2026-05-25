@@ -19,13 +19,16 @@ namespace Unisonmusic.Api.Controllers
 
         private readonly UnisonmusicDbContext _dbContext;
         private readonly IStorageService _storageService;
+        private readonly ISubscriptionService _subscriptionService;
 
         public PlaylistsController(
             UnisonmusicDbContext dbContext,
-            IStorageService storageService)
+            IStorageService storageService,
+            ISubscriptionService subscriptionService)
         {
             _dbContext = dbContext;
             _storageService = storageService;
+            _subscriptionService = subscriptionService;
         }
 
         [HttpGet]
@@ -79,6 +82,15 @@ namespace Unisonmusic.Api.Controllers
             }
 
             await EnsureDefaultPlaylistExistsAsync(userId.Value, cancellationToken);
+
+            var subscription = await _subscriptionService.GetSubscriptionAsync(userId.Value, cancellationToken);
+            var currentPlaylistCount = await _dbContext.Playlists
+                .CountAsync(x => x.UserId == userId.Value, cancellationToken);
+
+            if (currentPlaylistCount >= subscription.Limits.MaxPlaylists)
+            {
+                return StatusCode(403, $"Достигнут лимит плейлистов ({subscription.Limits.MaxPlaylists}). Оформите Unison+ для неограниченного количества.");
+            }
 
             var alreadyExists = await _dbContext.Playlists
                 .AnyAsync(

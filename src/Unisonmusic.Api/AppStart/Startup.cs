@@ -67,7 +67,8 @@ namespace Unisonmusic.Api.AppStart
 
             _builder.Services.AddSingleton<IRoomService, RoomService>();
             _builder.Services.AddScoped<IOfftubeClient, OfftubeClient>();
-            _builder.Services.AddScoped<IStorageService, S3StorageService>();            
+            _builder.Services.AddScoped<IStorageService, S3StorageService>();
+            _builder.Services.AddScoped<ISubscriptionService, SubscriptionService>();
 
             _builder.Services.AddHttpClient<IOfftubeClient, OfftubeClient>((serviceProvider, client) =>
             {
