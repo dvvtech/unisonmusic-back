@@ -147,6 +147,78 @@ namespace Unisonmusic.Api.Controllers
             return Ok(CreateResponse(trackEntity));
         }
 
+        [HttpPost("upload-from-file")]
+        [RequestSizeLimit(100_000_000)]
+        public async Task<IActionResult> UploadFromFile(
+            [FromForm] IFormFile? file,
+            CancellationToken cancellationToken)
+        {
+            if (file == null || file.Length == 0)
+            {
+                return BadRequest("File is required");
+            }
+
+            var uploadResponse = await _offtubeClient.UploadFileAsync(
+                file,
+                cancellationToken);
+
+            if (uploadResponse == null ||
+                string.IsNullOrWhiteSpace(uploadResponse.ObjectKey))
+            {
+                return StatusCode(
+                    StatusCodes.Status500InternalServerError,
+                    "Failed to upload file");
+            }
+
+            var userId = this.GetCurrentAccountId();
+            var sourceKey = $"file:{uploadResponse.ObjectKey}";
+
+            TrackEntity trackEntity;
+
+            try
+            {
+                trackEntity = new TrackEntity
+                {
+                    Url = sourceKey,
+                    S3ObjectKey = uploadResponse.ObjectKey,
+                    Title = string.IsNullOrWhiteSpace(uploadResponse.TrackTitle)
+                        ? file.FileName
+                        : uploadResponse.TrackTitle
+                };
+
+                await _dbContext.Tracks.AddAsync(
+                    trackEntity,
+                    cancellationToken);
+
+                await _dbContext.SaveChangesAsync(cancellationToken);
+            }
+            catch (DbUpdateException)
+            {
+                trackEntity = await _dbContext.Tracks
+                    .AsNoTracking()
+                    .FirstOrDefaultAsync(
+                        t => t.Url == sourceKey,
+                        cancellationToken);
+
+                if (trackEntity == null)
+                {
+                    return StatusCode(
+                        StatusCodes.Status500InternalServerError,
+                        "Failed to get saved track");
+                }
+            }
+
+            if (userId.HasValue)
+            {
+                await EnsureUserTrackExistsAsync(
+                    userId.Value,
+                    trackEntity.Id,
+                    cancellationToken);
+            }
+
+            return Ok(CreateResponse(trackEntity));
+        }
+
         private async Task EnsureUserTrackExistsAsync(
             int userId,
             long trackId,

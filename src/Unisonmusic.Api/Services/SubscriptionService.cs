@@ -8,9 +8,9 @@ namespace Unisonmusic.Api.Services;
 
 public class SubscriptionService : ISubscriptionService
 {
-    private const int BasicMaxPlaylists = 3;
+    private const int BasicMaxPlaylists = int.MaxValue;
     private const int PlusMaxPlaylists = int.MaxValue;
-    private const int BasicMaxRoomMembers = 3;
+    private const int BasicMaxRoomMembers = int.MaxValue;
     private const int PlusMaxRoomMembers = int.MaxValue;
 
     private readonly IDbContextFactory<UnisonmusicDbContext> _dbContextFactory;
@@ -112,8 +112,7 @@ public class SubscriptionService : ISubscriptionService
     public int GetMaxRoomMembers(string plan) =>
         plan == SubscriptionPlan.Plus ? PlusMaxRoomMembers : BasicMaxRoomMembers;
 
-    public bool HasBackgroundPlay(string plan) =>
-        plan == SubscriptionPlan.Plus;
+    public bool HasBackgroundPlay(string plan) => true;
 
     private static string GetActivePlan(SubscriptionEntity? subscription)
     {

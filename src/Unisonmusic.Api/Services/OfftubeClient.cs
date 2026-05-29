@@ -46,5 +46,38 @@ namespace Unisonmusic.Api.Services
 
             return null;
         }
+
+        public async Task<UploadResponse> UploadFileAsync(IFormFile file, CancellationToken cancellationToken = default)
+        {
+            try
+            {
+                await using var fileStream = file.OpenReadStream();
+                using var form = new MultipartFormDataContent();
+                using var fileContent = new StreamContent(fileStream);
+
+                if (!string.IsNullOrWhiteSpace(file.ContentType))
+                {
+                    fileContent.Headers.ContentType = new System.Net.Http.Headers.MediaTypeHeaderValue(file.ContentType);
+                }
+
+                form.Add(fileContent, "file", file.FileName);
+
+                var response = await _httpClient.PostAsync(
+                    "music/upload-from-file",
+                    form,
+                    cancellationToken);
+
+                response.EnsureSuccessStatusCode();
+
+                return await response.Content
+                    .ReadFromJsonAsync<UploadResponse>(cancellationToken);
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Failed to upload file: {FileName}", file.FileName);
+            }
+
+            return null;
+        }
     }
 }
