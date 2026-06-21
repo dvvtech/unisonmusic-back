@@ -218,6 +218,46 @@ namespace Unisonmusic.Api.Controllers
             return Ok();
         }
 
+        [HttpDelete("{playlistId:long}/tracks/{trackId:long}")]
+        public async Task<ActionResult> RemoveTrackFromPlaylist(
+            long playlistId,
+            long trackId,
+            CancellationToken cancellationToken)
+        {
+            var userId = this.GetCurrentAccountId();
+            if (!userId.HasValue)
+            {
+                return Unauthorized();
+            }
+
+            var playlistExists = await _dbContext.Playlists
+                .AnyAsync(
+                    x => x.Id == playlistId &&
+                         x.UserId == userId.Value,
+                    cancellationToken);
+
+            if (!playlistExists)
+            {
+                return NotFound("Playlist not found");
+            }
+
+            var playlistTrack = await _dbContext.PlaylistTracks
+                .FirstOrDefaultAsync(
+                    x => x.PlaylistId == playlistId &&
+                         x.TrackId == trackId,
+                    cancellationToken);
+
+            if (playlistTrack == null)
+            {
+                return NotFound("Track not found in playlist");
+            }
+
+            _dbContext.PlaylistTracks.Remove(playlistTrack);
+            await _dbContext.SaveChangesAsync(cancellationToken);
+
+            return Ok();
+        }
+
         [HttpDelete("{playlistId:long}")]
         public async Task<ActionResult> DeletePlaylist(
             long playlistId,
